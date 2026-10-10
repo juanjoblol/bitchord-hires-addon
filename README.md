@@ -76,7 +76,7 @@ Tocá *Test* para el health check.
 ### Configuración incluida
 
 - `checkValidLossless: 1` — el addon solo se consulta con una salida capaz de lossless (cable, USB, HDMI, o BT LDAC/LHDC/aptX Lossless). Con BT normal no se le habla. En la lista aparece *Needs a lossless output*.
-- `allowDownloads: 0` — se puede escuchar, pero las descargas las toma la siguiente fuente habilitada. Evita que el plugin se vuelva el origen de archivos guardados.
+- `allowDownloads: 1` — las descargas salen de este addon, así que se guardan en FLAC. Solo funciona para pistas que existan en Qobuz; si el addon devuelve 404, BitChord cae a la siguiente fuente.
 - `settings.quality` — `lossless` / `high` / `low`. BitChord reenvía el valor elegido en `/search` y `/stream`.
 
 ---
