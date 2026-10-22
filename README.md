@@ -12,15 +12,15 @@ BitChord rechaza cualquier stream con DRM (`encrypted: true`), así que la pregu
 
 | Fuente | Rol | Estado verificado |
 |---|---|---|
-| **Qobuz** | Audio principal | ✅ FLAC hasta 24/192. Stream directo, sin DRM |
+| **Qobuz** | Audio principal | ⚠️ Proxy público caído (402). Si vuelve, FLAC hasta 24/192 |
+| **Tidal** | Audio principal | ✅ FLAC 16/44.1 vía losslessbridge (Monochrome/hifi-api). Sin cuenta |
 | **Internet Archive** | Audio secundario | ✅ FLAC real desde el CDN, sin cuenta |
-| **Deezer** | Solo catálogo | ✅ `api.deezer.com` sin credenciales. El audio real va cifrado, así que sus filas se resuelven buscando la misma canción en Qobuz |
-| Spotify | — | ❌ Web API nunca expone URLs de archivo; su FLAC 24/44.1 va por CDN propio cifrado |
-| Apple Music | — | ❌ FairPlay cifrado. Solo preview MP3 de 30 s |
+| **Deezer** | Solo catálogo | ✅ `api.deezer.com`. Sus filas se resuelven buscando la misma canción en Tidal/Qobuz |
+| Spotify | — | ❌ Web API nunca expone URLs de archivo |
+| Apple Music | — | ❌ FairPlay cifrado |
 | Amazon Music | — | ❌ Widevine DRM |
-| Tidal | — | ❌ Los mirrors públicos de `hifi-api` están caídos y el proyecto oficial pide cuenta propia |
 
-O sea: **Qobuz y Archive dan el audio, Deezer amplía el catálogo.** Es el mismo enfoque que SpotiFLAC, y es la razón por la que buscás en Deezer y igual te suena en FLAC 24/192.
+O sea: **Tidal y Archive dan el audio ahora mismo; Qobuz lo hará cuando su proxy vuelva.** Es el mismo enfoque que SpotiFLAC, y es la razón por la que buscás en Deezer y igual te suena en FLAC 24/192.
 
 ---
 

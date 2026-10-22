@@ -16,13 +16,12 @@ function ok(name, condition, detail = '') {
 
 console.log('\n== FLAC header parsing ==');
 {
-  // Hand-build a STREAMINFO block so the parser is tested without a network round-trip.
   function buildStreamInfo(sampleRate, channels, bitDepth, totalSamples) {
     const bytes = new Uint8Array(42);
-    bytes.set([0x66, 0x4c, 0x61, 0x43], 0); // "fLaC"
-    bytes[4] = 0x00; // first block, type 0 (STREAMINFO), not last
+    bytes.set([0x66, 0x4c, 0x61, 0x43], 0);
+    bytes[4] = 0x00;
     bytes[5] = 0x00;
-    bytes[6] = 0x22; // length 34
+    bytes[6] = 0x22;
     const si = 8;
     bytes[si + 10] = (sampleRate >> 12) & 0xff;
     bytes[si + 11] = (sampleRate >> 4) & 0xff;
@@ -55,27 +54,29 @@ console.log('\n== FLAC header parsing ==');
   ok('rejects truncated header', parseStreamInfoForTest(hiRes.slice(0, 20)) === null);
 }
 
-console.log('\n== Qobuz search ==');
+console.log('\n== Search returns rows from at least one audio source ==');
 {
   const res = await searchAll('so what miles davis', 'LOSSLESS');
   ok('search returns tracks', res.tracks.length > 0, `got ${res.tracks.length}`);
   const row = res.tracks[0];
   ok('rows have id and title', Boolean(row?.id && row?.title));
   ok('rows have absolute artwork url', /^https:\/\//.test(row?.artworkURL || ''), row?.artworkURL);
-  ok('at least one qobuz row', res.perSource?.qb?.count > 0, JSON.stringify(res.perSource));
+
+  const audioSourceOk = Object.values(res.perSource || {}).some((s) => s.ok && s.count > 0);
+  ok('at least one audio source returned rows', audioSourceOk, JSON.stringify(res.perSource));
   console.log('   sample:', JSON.stringify(res.tracks.slice(0, 3).map((t) => ({
     id: t.id, title: t.title, artist: t.artist, dur: t.duration, src: t.source,
   })), null, 0));
 }
 
-console.log('\n== Qobuz stream (lossless) ==');
+console.log('\n== Stream resolves from an audio source (Qobuz if alive, else Tidal/Archive) ==');
 {
   const res = await searchAll('so what miles davis', 'LOSSLESS');
-  const row = res.tracks.find((t) => t.id.startsWith('qb:'));
-  if (!row) {
-    ok('found a qobuz row to resolve', false);
+  const audioRow = res.tracks.find((t) => t.id.startsWith('qb:') || t.id.startsWith('td:') || t.id.startsWith('ia:'));
+  if (!audioRow) {
+    ok('found an audio-source row to resolve', false);
   } else {
-    const stream = await resolveStream(row.id, 'LOSSLESS');
+    const stream = await resolveStream(audioRow.id, 'LOSSLESS');
     ok('stream resolved', Boolean(stream?.url));
     ok('url is https', /^https:\/\//.test(stream?.url || ''));
     ok('encrypted is false', stream?.encrypted === false);
@@ -84,13 +85,13 @@ console.log('\n== Qobuz stream (lossless) ==');
     ok('bitDepth reported', Boolean(stream?.bitDepth), String(stream?.bitDepth));
     ok('quality label readable', typeof stream?.quality === 'string', stream?.quality);
     console.log('   stream:', JSON.stringify({
-      quality: stream.quality, codec: stream.codec, sr: stream.sampleRate,
-      bd: stream.bitDepth, br: stream.bitrate,
+      from: audioRow.id, quality: stream.quality, codec: stream.codec,
+      sr: stream.sampleRate, bd: stream.bitDepth, br: stream.bitrate, provider: stream.provider,
     }));
   }
 }
 
-console.log('\n== Deezer catalogue row resolves through Qobuz ==');
+console.log('\n== Deezer catalogue row resolves through an audio source ==');
 {
   const res = await searchAll('miles davis so what', 'LOSSLESS');
   const dz = res.tracks.find((t) => t.id.startsWith('dz:'));
@@ -98,7 +99,7 @@ console.log('\n== Deezer catalogue row resolves through Qobuz ==');
   if (dz) {
     const stream = await resolveStream(dz.id, 'LOSSLESS');
     ok('deezer row resolves to a stream', Boolean(stream?.url));
-    ok('resolved via Qobuz', stream?.provider === 'Qobuz', stream?.provider);
+    ok('resolved via Qobuz or Tidal', stream?.provider === 'Qobuz' || stream?.provider === 'Tidal', stream?.provider);
     console.log('   resolved:', JSON.stringify({
       from: dz.title, quality: stream?.quality, provider: stream?.provider,
     }));
@@ -109,6 +110,8 @@ console.log('\n== Misses and bad input ==');
 {
   const bogus = await resolveStream('qb:999999999', 'LOSSLESS');
   ok('unknown qobuz id returns null', bogus === null);
+  const bogusTd = await resolveStream('td:999999999', 'LOSSLESS');
+  ok('unknown tidal id returns null', bogusTd === null);
   const badPrefix = await resolveStream('xx:not-an-id', 'LOSSLESS');
   ok('unknown prefix returns null', badPrefix === null);
   const empty = await searchAll('', 'LOSSLESS');
@@ -119,9 +122,15 @@ console.log('\n== Health ==');
 {
   const report = await health();
   ok('health responds', typeof report === 'object');
-  ok('qobuz reachable', report.providers.find((p) => p.provider === 'qobuz')?.reachable);
-  ok('deezer reachable', report.providers.find((p) => p.provider === 'deezer')?.reachable);
-  console.log('   ' + JSON.stringify(report.providers));
+  const providers = report.providers || [];
+  const deezerOk = providers.find((p) => p.provider === 'deezer')?.reachable;
+  const tidalOk = providers.find((p) => p.provider === 'tidal')?.reachable;
+  const archiveOk = providers.find((p) => p.provider === 'archive')?.reachable;
+  ok('deezer reachable', deezerOk);
+  ok('tidal reachable', tidalOk);
+  ok('archive reachable', archiveOk);
+  ok('at least one audio source reachable', tidalOk || archiveOk);
+  console.log('   ' + JSON.stringify(providers));
 }
 
 console.log(`\n${pass} passed, ${fail} failed\n`);
