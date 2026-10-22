@@ -2,7 +2,7 @@ import { searchAll, resolveStream, health } from '../lib/router.js';
 
 const MANIFEST = {
   id: 'dev.akira.bitchord-hires',
-  name: 'Hi-Res Lossless · Qobuz + Archive',
+  name: 'juanjob hi res',
   version: '1.0.0',
   resources: ['search', 'stream'],
   // Only offer this addon while the phone has a lossless-capable output.

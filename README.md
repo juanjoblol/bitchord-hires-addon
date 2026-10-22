@@ -1,4 +1,4 @@
-# BitChord Hi-Res Lossless Addon
+# juanjob hi res — BitChord Addon
 
 Addon HTTP para [BitChord](https://github.com/kushagrasinghx/BitChord) que reproduce **FLAC real de alta resolución** verificado leyendo el propio archivo — hasta **24-bit / 192 kHz**.
 
