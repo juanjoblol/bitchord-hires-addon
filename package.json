@@ -5,8 +5,8 @@
   "type": "module",
   "description": "Hi-Res Lossless BitChord addon (Qobuz + Internet Archive, Deezer catalogue matching)",
   "scripts": {
-    "dev": "node test/server.js",
-    "dev:vercel": "vercel dev",
+    "dev": "node server.js",
+    "start": "node server.js",
     "deploy": "vercel deploy --prod",
     "test": "node test/run.js",
     "test:contract": "node -e \"import('./lib/contract.test.js').then(m=>m.run()).then(r=>console.log('CONTRACT OK',JSON.stringify(r.stream))).catch(e=>{console.error('CONTRACT FAIL:',e.message);process.exit(1)})\""

@@ -1,0 +1,10 @@
+version: 1
+type: web
+
+build:
+  framework: dockerfile
+  dockerfile: Dockerfile
+
+run:
+  command: node server.js
+  port: 8787
