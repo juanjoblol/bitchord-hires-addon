@@ -12,21 +12,21 @@ BitChord rechaza cualquier stream con DRM (`encrypted: true`), así que la pregu
 
 | Fuente | Rol | Estado verificado |
 |---|---|---|
-| **Qobuz** | Audio principal | ⚠️ Proxy público caído (402). Si vuelve, FLAC hasta 24/192 |
-| **Tidal** | Audio principal | ✅ FLAC 16/44.1 vía losslessbridge (Monochrome/hifi-api). Sin cuenta |
+| **Qobuz** | Audio principal | ✅ FLAC hasta 24/192 vía gglos (addon público) |
+| **Tidal** | — | ❌ Upstream (losslessbridge) cambió su API |
 | **Internet Archive** | Audio secundario | ✅ FLAC real desde el CDN, sin cuenta |
-| **Deezer** | Solo catálogo | ✅ `api.deezer.com`. Sus filas se resuelven buscando la misma canción en Tidal/Qobuz |
+| **Deezer** | Solo catálogo | ✅ `api.deezer.com`. Sus filas se resuelven buscando la misma canción en Qobuz |
 | Spotify | — | ❌ Web API nunca expone URLs de archivo |
 | Apple Music | — | ❌ FairPlay cifrado |
 | Amazon Music | — | ❌ Widevine DRM |
 
-O sea: **Tidal y Archive dan el audio ahora mismo; Qobuz lo hará cuando su proxy vuelva.** Es el mismo enfoque que SpotiFLAC, y es la razón por la que buscás en Deezer y igual te suena en FLAC 24/192.
+O sea: **Qobuz da el audio ahora mismo a 24-bit/192kHz, y Archive sirve de respaldo.** Es el mismo enfoque que SpotiFLAC, y es la razón por la que buscás en Deezer y igual te suena en FLAC.
 
 ---
 
 ## Verificación real, no declarada
 
-El addon no promete "lossless" y listo. Antes de devolver un stream hace un `Range: bytes=0-63` y parsea el bloque **STREAMINFO** del FLAC:
+El addon no promete "lossless" y listo. Para Qobuz confía en los metadatos que gglos devuelve (sampleRate, bitDepth reales del stream). Para Internet Archive y el modo self-hosted hace un `Range: bytes=0-63` y parsea el bloque **STREAMINFO** del FLAC:
 
 ```json
 {
@@ -43,7 +43,7 @@ El addon no promete "lossless" y listo. Antes de devolver un stream hace un `Ran
 }
 ```
 
-Los números salen del archivo, no del catálogo. Si la URL devuelve HTML, MP3, o cualquier otra cosa, la resolución se descarta y se prueba el siguiente formato. La doc de BitChord es explícita sobre esto: *una etiqueta lossless sobre un URL lossy no crea un badge lossless*.
+Los números salen del archivo o del upstream confiable, no del catálogo. Si la URL devuelve HTML, MP3, o cualquier otra cosa, la resolución se descarta. La doc de BitChord es explícita sobre esto: *una etiqueta lossless sobre un URL lossy no crea un badge lossless*.
 
 ---
 
@@ -107,14 +107,13 @@ GET /stream/{id}?quality=LOSSLESS
 
 ### Formatos de Qobuz
 
-El addon pide el mejor formato disponible y baja de escalón si el CDN falla:
+El addon pide hi-res a gglos y devuelve el mejor disponible:
 
-|(fmt) | Resultado |
+| Calidad | Resultado |
 |---|---|
-| 27 | FLAC 24/192 |
-| 7 | FLAC 24/96 |
-| 6 | FLAC 16/44.1 (CD) |
-| 5 | MP3 320 (tier LOW) |
+| `hi_res_lossless` | FLAC 24-bit (hasta 192 kHz) |
+| `lossless` | FLAC 16/44.1 (CD) |
+| `low` | MP3 320 |
 
 ---
 
@@ -150,7 +149,8 @@ api/index.js              handler HTTP (contrato BitChord)
 lib/router.js             merge de búsqueda, resolución, matching Deezer→Qobuz
 lib/flac.js               parser de STREAMINFO + sondeo de URLs
 lib/cache.js              TTL: search 10 min, stream 4 min
-lib/providers/qobuz.js    audio principal
+lib/providers/qobuz.js    audio principal (vía gglos)
+lib/providers/tidal.js    audio (upstream caído; se reintenta solo)
 lib/providers/archive.js  audio secundario
 lib/providers/deezer.js   catálogo
 test/run.js               e2e
@@ -167,8 +167,8 @@ Ninguna hace falta para que funcione.
 
 | Variable | Para qué |
 |---|---|
-| `QOBUZ_UPSTREAM_BASE_URL` | Otro proxy de Qobuz si el default (`qobuz-dll.vercel.app`) cambia de host |
-| `QOBUZ_REST_API` | Tu propia instancia de `qobuz-rest-api`, si preferís no depender del proxy público |
+| `QOBUZ_UPSTREAM_BASE_URL` | Otro addon/combo de Qobuz si gglos (`gglos.geisselgottes.cfd`) cae |
+| `QOBUZ_REST_API` | Tu propia instancia de `qobuz-rest-api`, si preferís no depender del addon público |
 
 ---
 
