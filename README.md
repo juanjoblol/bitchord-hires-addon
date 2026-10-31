@@ -12,7 +12,7 @@ BitChord rechaza cualquier stream con DRM (`encrypted: true`), así que la pregu
 
 | Fuente | Rol | Estado verificado |
 |---|---|---|
-| **Qobuz** | Audio principal | ✅ FLAC hasta 24/192 vía gglos (addon público) |
+| **Qobuz** | Audio principal | ✅ FLAC hasta 24/192 vía soundfean-musics (addon público) |
 | **Tidal** | — | ❌ Upstream (losslessbridge) cambió su API |
 | **Internet Archive** | Audio secundario | ✅ FLAC real desde el CDN, sin cuenta |
 | **Deezer** | Solo catálogo | ✅ `api.deezer.com`. Sus filas se resuelven buscando la misma canción en Qobuz |
@@ -107,13 +107,13 @@ GET /stream/{id}?quality=LOSSLESS
 
 ### Formatos de Qobuz
 
-El addon pide hi-res a gglos y devuelve el mejor disponible:
+El addon pide hi-res a soundfean y devuelve el mejor disponible:
 
 | Calidad | Resultado |
 |---|---|
-| `hi_res_lossless` | FLAC 24-bit (hasta 192 kHz) |
-| `lossless` | FLAC 16/44.1 (CD) |
-| `low` | MP3 320 |
+| `HI_RES` | FLAC 24-bit (hasta 192 kHz) |
+| `LOSSLESS` | FLAC 16/44.1 (CD) |
+| `LOW` | MP3 320 |
 
 ---
 
@@ -149,7 +149,7 @@ api/index.js              handler HTTP (contrato BitChord)
 lib/router.js             merge de búsqueda, resolución, matching Deezer→Qobuz
 lib/flac.js               parser de STREAMINFO + sondeo de URLs
 lib/cache.js              TTL: search 10 min, stream 4 min
-lib/providers/qobuz.js    audio principal (vía gglos)
+lib/providers/qobuz.js    audio principal (vía soundfean-musics)
 lib/providers/tidal.js    audio (upstream caído; se reintenta solo)
 lib/providers/archive.js  audio secundario
 lib/providers/deezer.js   catálogo
@@ -167,7 +167,7 @@ Ninguna hace falta para que funcione.
 
 | Variable | Para qué |
 |---|---|
-| `QOBUZ_UPSTREAM_BASE_URL` | Otro addon/combo de Qobuz si gglos (`gglos.geisselgottes.cfd`) cae |
+| `QOBUZ_UPSTREAM_BASE_URL` | Otro addon de Qobuz si soundfean (`soundfean-musics.onrender.com/a`) cae |
 | `QOBUZ_REST_API` | Tu propia instancia de `qobuz-rest-api`, si preferís no depender del addon público |
 
 ---
