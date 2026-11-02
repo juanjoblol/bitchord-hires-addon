@@ -1,4 +1,3 @@
-// Minimal Node HTTP wrapper around the Vercel handler, for `npm run dev:local`.
 import { createServer } from 'node:http';
 import handler from '../api/index.js';
 
