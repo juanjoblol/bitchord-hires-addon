@@ -46,7 +46,12 @@ function json(res, status, body, extraHeaders = {}) {
 
 export default async function handler(req, res) {
   const url = new URL(req.url, 'http://localhost');
-  const path = url.pathname.replace(/\/+$/, '') || '/';
+  const rawPath = url.pathname.replace(/\/+$/, '') || '/';
+  const path = rawPath === '/api/index.js'
+    ? '/'
+    : rawPath.startsWith('/api/')
+      ? rawPath.slice(4)
+      : rawPath;
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204, {
