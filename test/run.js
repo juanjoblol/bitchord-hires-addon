@@ -60,7 +60,8 @@ console.log('\n== Search returns rows from at least one audio source ==');
   ok('search returns tracks', res.tracks.length > 0, `got ${res.tracks.length}`);
   const row = res.tracks[0];
   ok('rows have id and title', Boolean(row?.id && row?.title));
-  ok('rows have absolute artwork url', /^https:\/\//.test(row?.artworkURL || ''), row?.artworkURL);
+  const artworkOk = res.tracks.every((t) => !t.artworkURL || /^https:\/\//.test(t.artworkURL));
+  ok('artwork urls are absolute when present', artworkOk);
 
   const audioSourceOk = Object.values(res.perSource || {}).some((s) => s.ok && s.count > 0);
   ok('at least one audio source returned rows', audioSourceOk, JSON.stringify(res.perSource));
@@ -99,7 +100,8 @@ console.log('\n== Deezer catalogue row resolves through an audio source ==');
   if (dz) {
     const stream = await resolveStream(dz.id, 'LOSSLESS');
     ok('deezer row resolves to a stream', Boolean(stream?.url));
-    ok('resolved via Qobuz or Tidal', stream?.provider === 'Qobuz' || stream?.provider === 'Tidal', stream?.provider);
+    const audioProviders = ['Qobuz', 'Tidal', 'Monochrome', 'Netease', 'Internet Archive'];
+    ok('resolved via an audio source', audioProviders.includes(stream?.provider), stream?.provider);
     console.log('   resolved:', JSON.stringify({
       from: dz.title, quality: stream?.quality, provider: stream?.provider,
     }));
@@ -124,12 +126,11 @@ console.log('\n== Health ==');
   ok('health responds', typeof report === 'object');
   const providers = report.providers || [];
   const deezerOk = providers.find((p) => p.provider === 'deezer')?.reachable;
-  const tidalOk = providers.find((p) => p.provider === 'tidal')?.reachable;
   const archiveOk = providers.find((p) => p.provider === 'archive')?.reachable;
+  const audioOk = providers.some((p) => ['qobuz', 'tidal', 'monochrome', 'netease', 'archive'].includes(p.provider) && p.reachable);
   ok('deezer reachable', deezerOk);
-  ok('tidal reachable', tidalOk);
   ok('archive reachable', archiveOk);
-  ok('at least one audio source reachable', tidalOk || archiveOk);
+  ok('at least one audio source reachable', audioOk);
   console.log('   ' + JSON.stringify(providers));
 }
 

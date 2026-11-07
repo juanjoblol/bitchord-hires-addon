@@ -1,6 +1,6 @@
 # juanjob hi res — BitChord Addon
 
-Addon HTTP para [BitChord](https://github.com/kushagrasinghx/BitChord) que reproduce **FLAC real de alta resolución** verificado leyendo el propio archivo — hasta **24-bit / 192 kHz**.
+Addon HTTP para [BitChord](https://github.com/kushagrasinghx/BitChord) con **múltiples fuentes de audio y failover automático**. Reproduce **FLAC real** —hasta **24-bit / 192 kHz** cuando Qobuz está disponible— y si una fuente falla, resuelve la misma grabación en otra.
 
 Sin cuentas, sin login, sin API keys. Todo lo que usa es público.
 
@@ -10,23 +10,38 @@ Sin cuentas, sin login, sin API keys. Todo lo que usa es público.
 
 BitChord rechaza cualquier stream con DRM (`encrypted: true`), así que la pregunta no es "qué servicios tienen lossless" sino **"cuáles entregan un archivo limpio que se pueda abrir"**:
 
-| Fuente | Rol | Estado verificado |
+| Fuente | Rol | Upstream |
 |---|---|---|
-| **Qobuz** | Audio principal | ✅ FLAC hasta 24/192 vía soundfean-musics (addon público) |
-| **Tidal** | — | ❌ Upstream (losslessbridge) cambió su API |
-| **Internet Archive** | Audio secundario | ✅ FLAC real desde el CDN, sin cuenta |
-| **Deezer** | Solo catálogo | ✅ `api.deezer.com`. Sus filas se resuelven buscando la misma canción en Qobuz |
-| Spotify | — | ❌ Web API nunca expone URLs de archivo |
-| Apple Music | — | ❌ FairPlay cifrado |
-| Amazon Music | — | ❌ Widevine DRM |
+| **Qobuz** | Audio principal (hasta 24/192) | `soundfean-musics.onrender.com/a` |
+| **Tidal** | Audio (FLAC/DASH) | Aurix + `gglos` como catálogo de respaldo |
+| **Monochrome** | Audio (FLAC/DASH) | Auto-descubrimiento vía registro oficial de instancias |
+| **Netease** | Audio (FLAC 16/44.1) | `losslessbridge.de.deplexo.com` |
+| **Internet Archive** | Último respaldo | `archive.org` |
+| **Deezer** | Solo catálogo | `api.deezer.com` — sus filas se resuelven en cualquier fuente de audio |
 
-O sea: **Qobuz da el audio ahora mismo a 24-bit/192kHz, y Archive sirve de respaldo.** Es el mismo enfoque que SpotiFLAC, y es la razón por la que buscás en Deezer y igual te suena en FLAC.
+---
+
+## Failover automático
+
+**Búsqueda** — todas las fuentes se consultan en paralelo. Si una falla o tarda, las demás devuelven igual; las filas duplicadas (mismo título/artista/duración) se fusionan.
+
+**Stream** — si la fuente propia de una fila falla, el addon **re-matea la misma grabación** (título + artista + duración ±45s) en las demás fuentes de audio y resuelve ahí:
+
+```
+stream(qb:12345) → Qobuz caído
+  → "So What - Miles Davis, 547s"
+  → busca en Monochrome → misma grabación → FLAC ✅
+```
+
+Eso aplica a **todas** las filas, incluidas las de Deezer.
+
+**Monochrome** — descubre instancias vivas desde el registro oficial `monochrome-music/monochrome/public/instances.json` y las renueva solo; si cambian de dominio, el addon se adapta sin tocar código.
 
 ---
 
 ## Verificación real, no declarada
 
-El addon no promete "lossless" y listo. Para Qobuz confía en los metadatos que gglos devuelve (sampleRate, bitDepth reales del stream). Para Internet Archive y el modo self-hosted hace un `Range: bytes=0-63` y parsea el bloque **STREAMINFO** del FLAC:
+El addon no promete "lossless" y listo. Cada provider devuelve el codec, sample rate y bit depth reales del stream que entrega. Para Internet Archive hace un `Range: bytes=0-63` y parsea el bloque **STREAMINFO** del FLAC; para Tidal declara explícitamente el transporte DASH cuando corresponde:
 
 ```json
 {
@@ -77,7 +92,7 @@ Tocá *Test* para el health check.
 
 - `bitchordAuth: true` — solo la app oficial de BitChord puede consultar `/search`, `/stream` y `/health`. El manifest queda público. Ver *Addon auth* abajo.
 - `checkValidLossless: 1` — el addon solo se consulta con una salida capaz de lossless (cable, USB, HDMI, o BT LDAC/LHDC/aptX Lossless). Con BT normal no se le habla. En la lista aparece *Needs a lossless output*.
-- `allowDownloads: 1` — las descargas salen de este addon, así que se guardan en FLAC. Solo funciona para pistas que existan en Qobuz; si el addon devuelve 404, BitChord cae a la siguiente fuente.
+- `allowDownloads: 1` — las descargas salen de este addon, así que se guardan en FLAC. Si una fuente falla, el failover resuelve la pista en otra; si el addon devuelve 404, BitChord cae a la siguiente fuente.
 - `settings.quality` — `lossless` / `high` / `low`. BitChord reenvía el valor elegido en `/search` y `/stream`.
 
 ### Addon auth
@@ -107,11 +122,14 @@ GET /stream/{id}?quality=LOSSLESS        requiere addon auth
 {
   "ok": true,
   "node": "v22.x",
-  "audioSources": ["Qobuz", "Internet Archive"],
+  "audioSources": ["Qobuz", "Tidal", "Monochrome", "Netease", "Internet Archive"],
   "providers": [
-    { "provider": "qobuz", "reachable": true, "latencyMs": 448 },
+    { "provider": "qobuz", "reachable": false, "latencyMs": 189 },
+    { "provider": "tidal", "reachable": false, "latencyMs": 194 },
+    { "provider": "monochrome", "reachable": true, "latencyMs": 94 },
+    { "provider": "netease", "reachable": true, "latencyMs": 4868 },
     { "provider": "deezer", "reachable": true, "latencyMs": 285 },
-    { "provider": "archive", "reachable": true, "latencyMs": 537 }
+    { "provider": "archive", "reachable": true, "latencyMs": 480 }
   ]
 }
 ```
@@ -134,7 +152,10 @@ Los ids son opacos y están prefijados por provider:
 
 ```
 qb:13176085      Qobuz
-dz:3135556       Deezer (catálogo; se resuelve vía Qobuz)
+td:12345678      Tidal
+mc:987654321     Monochrome
+ne:21335863      Netease
+dz:3135556       Deezer (catálogo; se resuelve en cualquier fuente de audio)
 ia:vegabonds...  Internet Archive
 ```
 
@@ -158,12 +179,14 @@ El test de contrato falla si: un artwork viene relativo, si un stream se marca `
 ```
 api/index.js                  handler HTTP (contrato BitChord) + guard de auth
 lib/bitchord-addon-auth.mjs   verificador oficial (sin dependencias)
-lib/router.js                 merge de búsqueda, resolución, matching Deezer→Qobuz
+lib/router.js                 búsqueda paralela, failover y cross-matching
 lib/flac.js                   parser de STREAMINFO + sondeo de URLs
 lib/cache.js                  TTL: search 10 min, stream 4 min
 lib/providers/qobuz.js        audio principal (vía soundfean-musics)
-lib/providers/tidal.js        audio (upstream caído; se reintenta solo)
-lib/providers/archive.js      audio secundario
+lib/providers/tidal.js        audio (Aurix DASH + gglos)
+lib/providers/monochrome.js   audio (auto-descubrimiento de instancias)
+lib/providers/netease.js      audio (losslessbridge)
+lib/providers/archive.js      audio de respaldo
 lib/providers/deezer.js       catálogo
 test/run.js                   e2e
 lib/contract.test.js          contrato
@@ -181,6 +204,9 @@ Ninguna hace falta para que funcione.
 |---|---|
 | `QOBUZ_UPSTREAM_BASE_URL` | Otro addon de Qobuz si soundfean (`soundfean-musics.onrender.com/a`) cae |
 | `QOBUZ_REST_API` | Tu propia instancia de `qobuz-rest-api`, si preferís no depender del addon público |
+| `TIDAL_UPSTREAM_BASE_URL` | Otro upstream de Aurix para Tidal |
+| `TIDAL_SEARCH_BACKUP_URL` | Otro catálogo de respaldo de Tidal (gglos por defecto) |
+| `NETEASE_UPSTREAM_BASE_URL` | Otro upstream de Netease (losslessbridge por defecto) |
 
 ---
 
