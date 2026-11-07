@@ -47,15 +47,15 @@ Los números salen del archivo o del upstream confiable, no del catálogo. Si la
 
 ---
 
-## Deploy en Vercel
+## Deploy en Deplexo
+
+El addon está conectado a Deplexo desde GitHub: **cada push a `master` dispara un build y un deploy automático**.
 
 ```bash
-npm i -g vercel
-cd bitchord-hires-addon
-vercel deploy --prod
+git push origin master
 ```
 
-Te devuelve algo como `https://bitchord-hires-addon.vercel.app`. Ya tiene HTTPS.
+La URL de producción es `https://bitchord-hires-addon.de.deplexo.com`. El deploy viejo de Vercel quedó deshabilitado por billing (`402 Payment required`); Deplexo es el activo.
 
 Para probar en local antes:
 
@@ -68,7 +68,7 @@ npm run dev          # http://localhost:8787
 **Settings → Sources → Add an addon** → pegá la raíz o el manifest:
 
 ```
-https://bitchord-hires-addon.vercel.app
+https://bitchord-hires-addon.de.deplexo.com
 ```
 
 Tocá *Test* para el health check.
@@ -88,7 +88,7 @@ Implementa el protocolo oficial de BitChord 1.9.1+ con el verificador `lib/bitch
 - `/search`, `/stream` y `/health` exigen `X-BitChord-Token` y `X-BitChord-Proof`.
 - Un pedido sin credenciales, de un fork, de un script o del navegador recibe `401` con `WWW-Authenticate: BitChord` y un código (`missing`, `expired`, `invalid_token`, `invalid_proof`, `stale_proof`); si no se pueden bajar las claves públicas, `503 unavailable`.
 - La prueba viene del hardware del teléfono y de la clave de firma oficial: **BitChord desktop/web no puede usar el addon** una vez aplicado el bloqueo.
-- Host configurado: `bitchord-hires-addon.vercel.app`.
+- Hosts configurados: `bitchord-hires-addon.de.deplexo.com` (principal) y `bitchord-hires-addon.vercel.app` (alias).
 
 ---
 
