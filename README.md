@@ -15,7 +15,7 @@ BitChord rechaza cualquier stream con DRM (`encrypted: true`), así que la pregu
 | **Qobuz** | Audio principal (hasta 24/192) | `soundfean-musics.onrender.com/a` |
 | **Tidal** | Audio (FLAC/DASH) | Aurix + `gglos` como catálogo de respaldo |
 | **Monochrome** | Audio (FLAC/DASH) | Auto-descubrimiento vía registro oficial de instancias |
-| **Netease** | Audio (FLAC 16/44.1) | `losslessbridge.de.deplexo.com` |
+| **Netease** | Audio (FLAC hasta 24/96) | `losslessbridge.de.deplexo.com` + Meting (`api.qijieya.cn`) como respaldo |
 | **Internet Archive** | Último respaldo | `archive.org` |
 | **Deezer** | Solo catálogo | `api.deezer.com` — sus filas se resuelven en cualquier fuente de audio |
 
@@ -185,7 +185,7 @@ lib/cache.js                  TTL: search 10 min, stream 4 min
 lib/providers/qobuz.js        audio principal (vía soundfean-musics)
 lib/providers/tidal.js        audio (Aurix DASH + gglos)
 lib/providers/monochrome.js   audio (auto-descubrimiento de instancias)
-lib/providers/netease.js      audio (losslessbridge)
+lib/providers/netease.js      audio (losslessbridge + Meting)
 lib/providers/archive.js      audio de respaldo
 lib/providers/deezer.js       catálogo
 test/run.js                   e2e
@@ -207,6 +207,7 @@ Ninguna hace falta para que funcione.
 | `TIDAL_UPSTREAM_BASE_URL` | Otro upstream de Aurix para Tidal |
 | `TIDAL_SEARCH_BACKUP_URL` | Otro catálogo de respaldo de Tidal (gglos por defecto) |
 | `NETEASE_UPSTREAM_BASE_URL` | Otro upstream de Netease (losslessbridge por defecto) |
+| `NETEASE_METING_BASE_URL` | Otro espejo Meting para el audio de Netease (`api.qijieya.cn` por defecto) |
 
 ---
 
