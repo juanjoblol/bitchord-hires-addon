@@ -1,6 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "rewrites": [{ "source": "/((?!api/).*)", "destination": "/api/index.js" }],
+  "rewrites": [
+    { "source": "/((?!api/).*)", "destination": "/api/index.js?path=$1" }
+  ],
   "functions": {
     "api/index.js": { "memory": 1024, "maxDuration": 30 }
   }

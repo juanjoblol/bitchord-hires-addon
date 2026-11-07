@@ -1,10 +1,14 @@
 import { searchAll, resolveStream, health } from '../lib/router.js';
+import { createBitChordAuth } from '../lib/bitchord-addon-auth.mjs';
+
+const bitchord = createBitChordAuth({ hosts: ['bitchord-hires-addon.vercel.app'] });
 
 const MANIFEST = {
   id: 'dev.akira.bitchord-hires',
   name: 'juanjob hi res',
-  version: '1.0.0',
+  version: '1.1.0',
   resources: ['search', 'stream'],
+  bitchordAuth: true,
   checkValidLossless: 1,
   allowDownloads: 1,
   settings: [
@@ -31,26 +35,40 @@ const MANIFEST = {
 };
 
 function json(res, status, body, extraHeaders = {}) {
-  res.writeHead(status, {
+  const headers = {
     'Content-Type': 'application/json; charset=utf-8',
     'Cache-Control': 'no-store',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    ...extraHeaders,
-  });
-  res.end(JSON.stringify(body));
+    'Access-Control-Allow-Headers': 'Content-Type, X-BitChord-Token, X-BitChord-Proof',
+    'Access-Control-Expose-Headers': 'WWW-Authenticate',
+  };
+  for (const [key, value] of Object.entries(extraHeaders)) {
+    const existing = Object.keys(headers).find((name) => name.toLowerCase() === key.toLowerCase());
+    if (existing) delete headers[existing];
+    headers[key] = value;
+  }
+  res.writeHead(status, headers);
+  res.end(typeof body === 'string' ? body : JSON.stringify(body));
 }
 
 export default async function handler(req, res) {
   const url = new URL(req.url, 'http://localhost');
-  const path = url.pathname.replace(/\/+$/, '') || '/';
+  let path = url.pathname.replace(/\/+$/, '') || '/';
+
+  // Vercel rewrites to /api/index.js; the original path arrives in ?path=$1
+  if (path === '/api/index.js' || path === '/api/index') {
+    const original = url.searchParams.get('path');
+    if (original !== null) {
+      path = ('/' + original).replace(/\/+$/, '') || '/';
+    }
+  }
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204, {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Headers': 'Content-Type, X-BitChord-Token, X-BitChord-Proof',
       'Access-Control-Max-Age': '86400',
     });
     return res.end();
@@ -62,6 +80,13 @@ export default async function handler(req, res) {
 
   if (path === '/' || path === '/manifest.json') {
     return json(res, 200, MANIFEST);
+  }
+
+  // Everything below the manifest only answers the official BitChord app.
+  const auth = await bitchord.verifyRequest(req);
+  if (!auth.ok) {
+    const rejection = bitchord.rejection(auth);
+    return json(res, rejection.status, rejection.body, rejection.headers);
   }
 
   if (path === '/health') {

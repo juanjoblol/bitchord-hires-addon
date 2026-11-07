@@ -75,19 +75,30 @@ Tocá *Test* para el health check.
 
 ### Configuración incluida
 
+- `bitchordAuth: true` — solo la app oficial de BitChord puede consultar `/search`, `/stream` y `/health`. El manifest queda público. Ver *Addon auth* abajo.
 - `checkValidLossless: 1` — el addon solo se consulta con una salida capaz de lossless (cable, USB, HDMI, o BT LDAC/LHDC/aptX Lossless). Con BT normal no se le habla. En la lista aparece *Needs a lossless output*.
 - `allowDownloads: 1` — las descargas salen de este addon, así que se guardan en FLAC. Solo funciona para pistas que existan en Qobuz; si el addon devuelve 404, BitChord cae a la siguiente fuente.
 - `settings.quality` — `lossless` / `high` / `low`. BitChord reenvía el valor elegido en `/search` y `/stream`.
+
+### Addon auth
+
+Implementa el protocolo oficial de BitChord 1.9.1+ con el verificador `lib/bitchord-addon-auth.mjs` (sin dependencias, WebCrypto):
+
+- `GET /` y `GET /manifest.json` son **públicos**: BitChord lee el flag sin credenciales.
+- `/search`, `/stream` y `/health` exigen `X-BitChord-Token` y `X-BitChord-Proof`.
+- Un pedido sin credenciales, de un fork, de un script o del navegador recibe `401` con `WWW-Authenticate: BitChord` y un código (`missing`, `expired`, `invalid_token`, `invalid_proof`, `stale_proof`); si no se pueden bajar las claves públicas, `503 unavailable`.
+- La prueba viene del hardware del teléfono y de la clave de firma oficial: **BitChord desktop/web no puede usar el addon** una vez aplicado el bloqueo.
+- Host configurado: `bitchord-hires-addon.vercel.app`.
 
 ---
 
 ## Endpoints
 
 ```
-GET /manifest.json
-GET /health
-GET /search?q=...&quality=LOSSLESS
-GET /stream/{id}?quality=LOSSLESS
+GET /manifest.json                       público
+GET /health                              requiere addon auth
+GET /search?q=...&quality=LOSSLESS       requiere addon auth
+GET /stream/{id}?quality=LOSSLESS        requiere addon auth
 ```
 
 `/health` reporta cada provider por separado con su latencia, así ves qué está caído antes de culpar a BitChord:
@@ -145,16 +156,17 @@ El test de contrato falla si: un artwork viene relativo, si un stream se marca `
 ## Estructura
 
 ```
-api/index.js              handler HTTP (contrato BitChord)
-lib/router.js             merge de búsqueda, resolución, matching Deezer→Qobuz
-lib/flac.js               parser de STREAMINFO + sondeo de URLs
-lib/cache.js              TTL: search 10 min, stream 4 min
-lib/providers/qobuz.js    audio principal (vía soundfean-musics)
-lib/providers/tidal.js    audio (upstream caído; se reintenta solo)
-lib/providers/archive.js  audio secundario
-lib/providers/deezer.js   catálogo
-test/run.js               e2e
-lib/contract.test.js      contrato
+api/index.js                  handler HTTP (contrato BitChord) + guard de auth
+lib/bitchord-addon-auth.mjs   verificador oficial (sin dependencias)
+lib/router.js                 merge de búsqueda, resolución, matching Deezer→Qobuz
+lib/flac.js                   parser de STREAMINFO + sondeo de URLs
+lib/cache.js                  TTL: search 10 min, stream 4 min
+lib/providers/qobuz.js        audio principal (vía soundfean-musics)
+lib/providers/tidal.js        audio (upstream caído; se reintenta solo)
+lib/providers/archive.js      audio secundario
+lib/providers/deezer.js       catálogo
+test/run.js                   e2e
+lib/contract.test.js          contrato
 ```
 
 Sin dependencias. Node ≥ 20.
