@@ -13,7 +13,7 @@ BitChord rechaza cualquier stream con DRM (`encrypted: true`), así que la pregu
 | Fuente | Rol | Upstream |
 |---|---|---|
 | **Qobuz** | Audio principal (hasta 24/192) | `soundfean-musics.onrender.com/a` |
-| **Tidal** | Audio (FLAC/DASH) | Aurix + `gglos` como catálogo de respaldo |
+| **Tidal** | Audio (FLAC 16/44.1) | `tracks.monochrome.st` — índice abierto que sirve el FLAC directo |
 | **Monochrome** | Audio (FLAC/DASH) | Auto-descubrimiento vía registro oficial de instancias |
 | **Netease** | Audio (FLAC hasta 24/96) | `losslessbridge.de.deplexo.com` + Meting (`api.qijieya.cn`) como respaldo |
 | **Internet Archive** | Último respaldo | `archive.org` |
@@ -41,7 +41,7 @@ Eso aplica a **todas** las filas, incluidas las de Deezer.
 
 ## Verificación real, no declarada
 
-El addon no promete "lossless" y listo. Cada provider devuelve el codec, sample rate y bit depth reales del stream que entrega. Para Internet Archive hace un `Range: bytes=0-63` y parsea el bloque **STREAMINFO** del FLAC; para Tidal declara explícitamente el transporte DASH cuando corresponde:
+El addon no promete "lossless" y listo. Cada provider devuelve el codec, sample rate y bit depth reales del stream que entrega. Para Internet Archive hace un `Range: bytes=0-63` y parsea el bloque **STREAMINFO** del FLAC; para Tidal lee el mismo bloque **STREAMINFO** del FLAC que sirve el índice:
 
 ```json
 {
@@ -183,7 +183,7 @@ lib/router.js                 búsqueda paralela, failover y cross-matching
 lib/flac.js                   parser de STREAMINFO + sondeo de URLs
 lib/cache.js                  TTL: search 10 min, stream 4 min
 lib/providers/qobuz.js        audio principal (vía soundfean-musics)
-lib/providers/tidal.js        audio (Aurix DASH + gglos)
+lib/providers/tidal.js        audio (tracks.monochrome.st, FLAC directo)
 lib/providers/monochrome.js   audio (auto-descubrimiento de instancias)
 lib/providers/netease.js      audio (losslessbridge + Meting)
 lib/providers/archive.js      audio de respaldo
@@ -204,8 +204,7 @@ Ninguna hace falta para que funcione.
 |---|---|
 | `QOBUZ_UPSTREAM_BASE_URL` | Otro addon de Qobuz si soundfean (`soundfean-musics.onrender.com/a`) cae |
 | `QOBUZ_REST_API` | Tu propia instancia de `qobuz-rest-api`, si preferís no depender del addon público |
-| `TIDAL_UPSTREAM_BASE_URL` | Otro upstream de Aurix para Tidal |
-| `TIDAL_SEARCH_BACKUP_URL` | Otro catálogo de respaldo de Tidal (gglos por defecto) |
+| `TIDAL_INDEX_BASE_URL` | Otro índice de Tidal si `tracks.monochrome.st` cae |
 | `NETEASE_UPSTREAM_BASE_URL` | Otro upstream de Netease (losslessbridge por defecto) |
 | `NETEASE_METING_BASE_URL` | Otro espejo Meting para el audio de Netease (`api.qijieya.cn` por defecto) |
 
