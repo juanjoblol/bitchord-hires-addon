@@ -12,9 +12,9 @@ BitChord rechaza cualquier stream con DRM (`encrypted: true`), así que la pregu
 
 | Fuente | Rol | Upstream |
 |---|---|---|
-| **Qobuz** | Audio principal (hasta 24/192) | `soundfean-musics.onrender.com/a` |
+| **Qobuz** | Audio hi-res (hoy su upstream responde 503) | `soundfean-musics.onrender.com/a` |
 | **Tidal** | Audio (FLAC 16/44.1) | `tracks.monochrome.st` — índice abierto que sirve el FLAC directo |
-| **Monochrome** | Audio (FLAC/DASH) | Auto-descubrimiento vía registro oficial de instancias |
+| **Monochrome** | **Audio principal** (FLAC 16/44.1) | `tracks.monochrome.st` — índice abierto que sirve el FLAC directo |
 | **Netease** | Audio (FLAC hasta 24/96) | `losslessbridge.de.deplexo.com` + Meting (`api.qijieya.cn`) como respaldo |
 | **Internet Archive** | Último respaldo | `archive.org` |
 | **Deezer** | Solo catálogo | `api.deezer.com` — sus filas se resuelven en cualquier fuente de audio |
