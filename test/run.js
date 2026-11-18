@@ -70,10 +70,10 @@ console.log('\n== Search returns rows from at least one audio source ==');
   })), null, 0));
 }
 
-console.log('\n== Stream resolves from an audio source (Qobuz if alive, else Tidal/Archive) ==');
+console.log('\n== Stream resolves from an audio source (Monochrome is primary) ==');
 {
   const res = await searchAll('so what miles davis', 'LOSSLESS');
-  const audioRow = res.tracks.find((t) => t.id.startsWith('qb:') || t.id.startsWith('td:') || t.id.startsWith('ia:'));
+  const audioRow = res.tracks.find((t) => t.id.startsWith('mc:') || t.id.startsWith('qb:') || t.id.startsWith('td:'));
   if (!audioRow) {
     ok('found an audio-source row to resolve', false);
   } else {
@@ -100,7 +100,7 @@ console.log('\n== Deezer catalogue row resolves through an audio source ==');
   if (dz) {
     const stream = await resolveStream(dz.id, 'LOSSLESS');
     ok('deezer row resolves to a stream', Boolean(stream?.url));
-    const audioProviders = ['Qobuz', 'Tidal', 'Monochrome', 'Netease', 'Internet Archive'];
+    const audioProviders = ['Qobuz', 'Tidal', 'Monochrome', 'Netease'];
     ok('resolved via an audio source', audioProviders.includes(stream?.provider), stream?.provider);
     console.log('   resolved:', JSON.stringify({
       from: dz.title, quality: stream?.quality, provider: stream?.provider,
@@ -126,10 +126,8 @@ console.log('\n== Health ==');
   ok('health responds', typeof report === 'object');
   const providers = report.providers || [];
   const deezerOk = providers.find((p) => p.provider === 'deezer')?.reachable;
-  const archiveOk = providers.find((p) => p.provider === 'archive')?.reachable;
-  const audioOk = providers.some((p) => ['qobuz', 'tidal', 'monochrome', 'netease', 'archive'].includes(p.provider) && p.reachable);
+  const audioOk = providers.some((p) => ['qobuz', 'tidal', 'monochrome', 'netease'].includes(p.provider) && p.reachable);
   ok('deezer reachable', deezerOk);
-  ok('archive reachable', archiveOk);
   ok('at least one audio source reachable', audioOk);
   console.log('   ' + JSON.stringify(providers));
 }

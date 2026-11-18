@@ -7,7 +7,7 @@ const MANIFEST = {
     id: 'dev.akira.bitchord-hires',
     name: 'juanjob hi res',
     version: '1.2.1',
-    description: 'Multi-source lossless addon: Qobuz hi-res, Tidal, Monochrome, Netease, Deezer catalogue, Internet Archive. Automatic failover.',
+    description: 'Multi-source lossless addon: Qobuz hi-res, Tidal, Monochrome, Netease, Deezer catalogue. Automatic failover.',
     resources: ['search', 'stream'],
     bitchordAuth: true,
     checkValidLossless: 1,

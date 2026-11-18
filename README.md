@@ -16,7 +16,6 @@ BitChord rechaza cualquier stream con DRM (`encrypted: true`), así que la pregu
 | **Tidal** | Audio (FLAC 16/44.1) | `tracks.monochrome.st` — índice abierto que sirve el FLAC directo |
 | **Monochrome** | **Audio principal** (FLAC 16/44.1) | `tracks.monochrome.st` — índice abierto que sirve el FLAC directo |
 | **Netease** | Audio (FLAC hasta 24/96) | `losslessbridge.de.deplexo.com` + Meting (`api.qijieya.cn`) como respaldo |
-| **Internet Archive** | Último respaldo | `archive.org` |
 | **Deezer** | Solo catálogo | `api.deezer.com` — sus filas se resuelven en cualquier fuente de audio |
 
 ---
@@ -41,7 +40,7 @@ Eso aplica a **todas** las filas, incluidas las de Deezer.
 
 ## Verificación real, no declarada
 
-El addon no promete "lossless" y listo. Cada provider devuelve el codec, sample rate y bit depth reales del stream que entrega. Para Internet Archive hace un `Range: bytes=0-63` y parsea el bloque **STREAMINFO** del FLAC; para Tidal lee el mismo bloque **STREAMINFO** del FLAC que sirve el índice:
+El addon no promete "lossless" y listo. Cada provider devuelve el codec, sample rate y bit depth reales del stream que entrega. Para Monochrome y Tidal hace un `Range: bytes=0-63` y parsea el bloque **STREAMINFO** del FLAC que sirve el índice:
 
 ```json
 {
@@ -122,14 +121,15 @@ GET /stream/{id}?quality=LOSSLESS        requiere addon auth
 {
   "ok": true,
   "node": "v22.x",
-  "audioSources": ["Qobuz", "Tidal", "Monochrome", "Netease", "Internet Archive"],
+  "audioSources": ["Monochrome", "Qobuz", "Tidal", "Netease"],
+  "audioAlive": ["monochrome", "tidal", "netease"],
+  "audioDown": [{ "provider": "qobuz", "reason": "http 503" }],
   "providers": [
-    { "provider": "qobuz", "reachable": false, "latencyMs": 189 },
-    { "provider": "tidal", "reachable": false, "latencyMs": 194 },
-    { "provider": "monochrome", "reachable": true, "latencyMs": 94 },
-    { "provider": "netease", "reachable": true, "latencyMs": 4868 },
-    { "provider": "deezer", "reachable": true, "latencyMs": 285 },
-    { "provider": "archive", "reachable": true, "latencyMs": 480 }
+    { "provider": "monochrome", "reachable": true, "latencyMs": 27 },
+    { "provider": "qobuz", "reachable": false, "latencyMs": 110, "reason": "http 503" },
+    { "provider": "tidal", "reachable": true, "latencyMs": 769 },
+    { "provider": "netease", "reachable": true, "latencyMs": 484 },
+    { "provider": "deezer", "reachable": true, "latencyMs": 302 }
   ]
 }
 ```
@@ -156,7 +156,6 @@ td:12345678      Tidal
 mc:987654321     Monochrome
 ne:21335863      Netease
 dz:3135556       Deezer (catálogo; se resuelve en cualquier fuente de audio)
-ia:vegabonds...  Internet Archive
 ```
 
 `/stream` devuelve **404** cuando el addon no tiene esa pista. Eso es intencional: la doc dice que 404 mueve la resolución limpiamente a la siguiente fuente, en vez de dejar el reproductor roto.
@@ -186,7 +185,6 @@ lib/providers/qobuz.js        audio principal (vía soundfean-musics)
 lib/providers/tidal.js        audio (tracks.monochrome.st, FLAC directo)
 lib/providers/monochrome.js   audio (auto-descubrimiento de instancias)
 lib/providers/netease.js      audio (losslessbridge + Meting)
-lib/providers/archive.js      audio de respaldo
 lib/providers/deezer.js       catálogo
 test/run.js                   e2e
 lib/contract.test.js          contrato

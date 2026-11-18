@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Hi-Res Lossless BitChord addon (Qobuz + Internet Archive, Deezer catalogue matching)",
+  "description": "Hi-Res Lossless BitChord addon (multi-source FLAC, Deezer catalogue matching)",
   "scripts": {
     "dev": "node server.js",
     "start": "node server.js",
