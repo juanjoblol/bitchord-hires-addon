@@ -100,7 +100,7 @@ console.log('\n== Deezer catalogue row resolves through an audio source ==');
   if (dz) {
     const stream = await resolveStream(dz.id, 'LOSSLESS');
     ok('deezer row resolves to a stream', Boolean(stream?.url));
-    const audioProviders = ['Qobuz', 'Tidal', 'Monochrome', 'Netease'];
+    const audioProviders = ['Qobuz', 'Tidal', 'Monochrome', 'Netease', 'Arcod'];
     ok('resolved via an audio source', audioProviders.includes(stream?.provider), stream?.provider);
     console.log('   resolved:', JSON.stringify({
       from: dz.title, quality: stream?.quality, provider: stream?.provider,
@@ -126,7 +126,7 @@ console.log('\n== Health ==');
   ok('health responds', typeof report === 'object');
   const providers = report.providers || [];
   const deezerOk = providers.find((p) => p.provider === 'deezer')?.reachable;
-  const audioOk = providers.some((p) => ['qobuz', 'tidal', 'monochrome', 'netease'].includes(p.provider) && p.reachable);
+  const audioOk = providers.some((p) => ['qobuz', 'tidal', 'monochrome', 'netease', 'arcod'].includes(p.provider) && p.reachable);
   ok('deezer reachable', deezerOk);
   ok('at least one audio source reachable', audioOk);
   console.log('   ' + JSON.stringify(providers));
