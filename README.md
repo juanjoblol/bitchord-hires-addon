@@ -1,6 +1,6 @@
 # juanjob hi res — BitChord Addon
 
-Addon HTTP para [BitChord](https://github.com/kushagrasinghx/BitChord) con **múltiples fuentes de audio y failover automático**. Reproduce **FLAC real** —hasta **24-bit / 192 kHz** cuando Qobuz está disponible— y si una fuente falla, resuelve la misma grabación en otra.
+Addon HTTP para [BitChord](https://github.com/kushagrasinghx/BitChord) con **múltiples fuentes de audio y failover automático**. Reproduce **FLAC real** —hasta **24-bit / 192 kHz** cuando la fuente lo entrega— y si una fuente falla, resuelve la misma grabación en otra.
 
 Sin cuentas, sin login, sin API keys. Todo lo que usa es público.
 
@@ -12,10 +12,11 @@ BitChord rechaza cualquier stream con DRM (`encrypted: true`), así que la pregu
 
 | Fuente | Rol | Upstream |
 |---|---|---|
-| **Qobuz** | Audio hi-res (hoy su upstream responde 503) | `soundfean-musics.onrender.com/a` |
-| **Tidal** | Audio (FLAC 16/44.1) | `tracks.monochrome.st` — índice abierto que sirve el FLAC directo |
-| **Monochrome** | **Audio principal** (FLAC 16/44.1) | `tracks.monochrome.st` — índice abierto que sirve el FLAC directo |
+| **Monochrome** | **Audio principal** (FLAC 16/44.1) | `tracks.monochrome.st` — índice abierto, sin descubrimiento de instancias |
+| **Arcod** | Audio Qobuz hi-res (hasta 24/192) | `arcod.xyz` — índice Qobuz + ticket firmado |
+| **Tidal** | Audio para IDs `td:` existentes (FLAC 16/44.1) | `tracks.monochrome.st` — no se busca, comparte índice con Monochrome |
 | **Netease** | Audio (FLAC hasta 24/96) | `losslessbridge.de.deplexo.com` + Meting (`api.qijieya.cn`) como respaldo |
+| **Qobuz** | Solo IDs `qb:` existentes (upstream 503) | `soundfean-musics.onrender.com/a` |
 | **Deezer** | Solo catálogo | `api.deezer.com` — sus filas se resuelven en cualquier fuente de audio |
 
 ---
@@ -27,14 +28,14 @@ BitChord rechaza cualquier stream con DRM (`encrypted: true`), así que la pregu
 **Stream** — si la fuente propia de una fila falla, el addon **re-matea la misma grabación** (título + artista + duración ±45s) en las demás fuentes de audio y resuelve ahí:
 
 ```
-stream(qb:12345) → Qobuz caído
+stream(dz:12345) → Deezer no sirve audio
   → "So What - Miles Davis, 547s"
   → busca en Monochrome → misma grabación → FLAC ✅
 ```
 
 Eso aplica a **todas** las filas, incluidas las de Deezer.
 
-**Monochrome** — descubre instancias vivas desde el registro oficial `monochrome-music/monochrome/public/instances.json` y las renueva solo; si cambian de dominio, el addon se adapta sin tocar código.
+**Monochrome** — usa el índice directo `tracks.monochrome.st`; no depende del registro de instancias ni de hosts legacy. La búsqueda tiene un presupuesto de 3,5 s y los streams resueltos se cachean 10 minutos.
 
 ---
 
